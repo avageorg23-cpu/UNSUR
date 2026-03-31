@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Reservas Bungalows UNSUR</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root{
+      --pad: clamp(10px, 2.0vw, 18px);
+      --day: clamp(38px, 8.6vw, 46px);
+      --gap: clamp(7px, 1.4vw, 10px);
+    }
+
+    body{
+      margin:0; padding:0;
+      font-family:'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-size:cover; background-position:center; background-repeat:no-repeat;
+      transition: background-image .5s ease-in-out;
+      color:#fff; text-align:center;
+
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      padding:
+        calc(var(--pad) + env(safe-area-inset-top))
+        var(--pad)
+        calc(var(--pad) + env(safe-area-inset-bottom))
+        var(--pad);
+    }
+
+    .container{
+      background-size:cover; background-position:center; background-repeat:no-repeat;
+      border: 1px solid rgba(255,255,255,0.22);
+      padding: 20px 18px 22px;
+      border-radius: 22px;
+      max-width: 680px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.40);
+      backdrop-filter: blur(3px);
+      position: relative;
+      overflow: hidden;
+
+      max-height: calc(100dvh - (var(--pad) * 2) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .container::before{
+      content:"";
+      position:absolute; inset:0;
+      background: radial-gradient(1200px 400px at 50% 0%, rgba(255,255,255,0.14), transparent 60%);
+      pointer-events:none;
+    }
+
+    h2{
+      margin:0 0 8px;
+      font-size: clamp(1.35rem, 3.6vw, 1.75rem);
+      letter-spacing:.02em;
+      position:relative;
+    }
+
+    .subtitle{
+      margin:0 0 12px;
+      font-size: clamp(.90rem, 2.6vw, .95rem);
+      opacity:.92;
+      line-height:1.25;
+      position:relative;
+    }
+
+    .top-row{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin: 10px 0 6px;
+      position:relative;
+    }
+
+    select{
+      -webkit-appearance:none;
+      appearance:none;
+      padding: 11px 44px 11px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.28);
+      color:#fff;
+      font-size: clamp(.92rem, 2.5vw, .95rem);
+      font-weight:800;
+      min-width: min(340px, 92vw);
+      outline:none;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+      backdrop-filter: blur(4px);
+    }
+
+    .select-wrap{ position:relative; display:inline-block; }
+    .select-wrap:after{
+      content:"▾";
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:rgba(255,255,255,0.85);
+      pointer-events:none;
+      font-size: 0.95rem;
+    }
+
+    .price-line{
+      margin: 8px 0 10px;
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 8px 14px;
+      border-radius: 999px;
+      display: inline-block;
+      backdrop-filter: blur(4px);
+      position: relative;
+    }
+
+    .calendar-nav{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      margin-top: 10px;
+      position:relative;
+      flex-wrap: wrap;
+    }
+
+    button{
+      border:none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-family:inherit;
+      font-weight:900;
+      cursor:pointer;
+      color:#fff;
+      background: rgba(0, 51, 102, 0.92);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled){
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.42);
+      background: rgba(0, 34, 68, 0.96);
+    }
+
+    button:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+
+    .month-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin: 12px 0 8px;
+      position:relative;
+    }
+
+    #month-year{
+      margin:0;
+      font-size: clamp(0.98rem, 2.9vw, 1.1rem);
+      text-transform:capitalize;
+      letter-spacing: .02em;
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 8px 14px;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      display:inline-flex;
+    }
+
+    #calendar {
+      position: relative;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 16px;
+      color: #003366;
+      font-weight: 900;
+      font-size: 1.1rem;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 4px solid rgba(0, 51, 102, 0.2);
+      border-top-color: #003366;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .error-message {
+      padding: 30px 15px;
+      text-align: center;
+      color: #b32a2a;
+      font-weight: bold;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+    }
+
+    .error-message a.wa-fallback {
+      display: inline-block;
+      margin-top: 15px;
+      background: #25D366;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 900;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: var(--gap);
+      background: rgba(255,255,255,0.90);
+      color:#000;
+      border-radius: 16px;
+      padding: clamp(9px, 1.9vw, 12px);
+      overflow:hidden;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+      position:relative;
+    }
+
+    th{
+      background: transparent;
+      color: rgba(0,0,0,0.55);
+      font-weight: 900;
+      border:none;
+      padding: 4px 0 0;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+    }
+
+    td{ border:none; padding:0; }
+
+    td > .day{
+      width: var(--day);
+      height: var(--day);
+      margin: 0 auto;
+      border-radius: 999px;
+      display:grid;
+      place-items:center;
+      font-weight: 900;
+      background: rgba(0,0,0,0.05);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+      transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    td.available > .day{
+      background: rgba(200,247,197,0.95);
+      cursor:pointer;
+    }
+
+    td.unavailable > .day{
+      background: rgba(0,0,0,0.07);
+      color: rgba(0,0,0,0.35);
+      cursor:not-allowed;
+      box-shadow:none;
+      opacity: 0.75;
+    }
+
+    td.selected-day > .day{
+      background: rgba(10, 90, 170, 0.18) !important;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.18);
+    }
+
+    td.checkin > .day,
+    td.checkout > .day{
+      background: #003366 !important;
+      color:#fff !important;
+      box-shadow: 0 16px 34px rgba(0,0,0,0.24);
+      transform: translateY(-1px);
+    }
+
+    .legend{
+      margin-top: 10px;
+      font-size: 0.76rem;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      position:relative;
+    }
+
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background: rgba(0,0,0,0.18);
+      padding: 6px 10px;
+      border-radius: 999px;
+      backdrop-filter: blur(2px);
+    }
+
+    .legend-dot{
+      width:10px; height:10px; border-radius:50%;
+      display:inline-block;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
+
+    .legend-dot.available-dot{ background:#c8f7c5; border-color: rgba(0,0,0,0.12); }
+    .legend-dot.unavailable-dot{ background:#f0f0f0; border-color: rgba(0,0,0,0.12); }
+    .legend-dot.selected-dot{ background:#003366; }
+    .legend-dot.range-dot{ background: rgba(10, 90, 170, 0.18); border-color: rgba(0,0,0,0.12); }
+
+    .payment-info{
+      background: rgba(255,255,255,0.96);
+      color:#000;
+      padding: 14px 14px 16px;
+      border-radius: 16px;
+      margin-top: 14px;
+      text-align:left;
+      font-size: .92rem;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+      position:relative;
+    }
+
+    .payment-info h4{ margin:0 0 8px; font-size:1rem; }
+    .payment-info p{ margin:6px 0; }
+
+    .user-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .user-form input {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.2);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    #pay-btn{
+      display:block;
+      width:100%;
+      margin-top: 10px;
+      font-weight: 900;
+      font-size: 1rem;
+      padding: 12px 14px;
+      border-radius: 999px;
+      text-align:center;
+      color:#fff;
+      background: rgba(0, 51, 102, 0.92);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      text-decoration:none;
+      transition: transform .08s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #pay-btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.42);
+      background: rgba(0, 34, 68, 0.96);
+    }
+
+    #pay-btn.disabled{
+      opacity:.55;
+      pointer-events:none;
+      box-shadow:none;
+    }
+
+    .after-pay-note{
+      margin-top: 10px;
+      font-size: .78rem;
+      color: rgba(0,0,0,0.60);
+      line-height: 1.25;
+    }
+
+    @media (max-width: 420px){
+      .container{ padding: 16px 12px 18px; border-radius: 20px; }
+      button{ padding: 9px 12px; font-size: .90rem; }
+      #month-year{ padding: 7px 12px; }
+      th{ font-size: .68rem; }
+      :root{ --day: 36px; --gap: 7px; }
+      .legend{ display:none; }
+      .price-line{ font-size: .92rem; padding: 7px 12px; }
+    }
+
+    @media (max-height: 740px){
+      :root{ --day: 34px; --gap: 6px; }
+      .subtitle{ margin-bottom: 10px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Reservá tu Bungalow</h2>
+    <p class="subtitle">Elegí el bungalow y seleccioná ingreso y salida</p>
+
+    <div class="top-row">
+      <span class="select-wrap">
+        <select id="bungalow">
+          <option value="Moreno">Moreno</option>
+          <option value="Mascardi">Mascardi</option>
+          <option value="Traful">Traful</option>
+          <option value="Nahuel Huapi">Nahuel Huapi</option>
+          <option value="Gutierrez">Gutierrez</option>
+          <option value="Espejo">Espejo</option>
+        </select>
+      </span>
+    </div>
+
+    <div id="price-line" class="price-line"></div>
+
+    <div class="calendar-nav">
+      <button type="button" onclick="changeMonth(-1)">Mes anterior</button>
+      <button type="button" onclick="changeMonth(1)">Mes siguiente</button>
+    </div>
+
+    <div id="calendar">
+      <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <span>Consultando fechas...</span>
+      </div>
+
+      <div class="month-wrap">
+        <h3 id="month-year"></h3>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Dom</th><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th>
+          </tr>
+        </thead>
+        <tbody id="calendar-body"></tbody>
+      </table>
+    </div>
+
+    <div class="legend">
+      <span><span class="legend-dot available-dot"></span> Disponible</span>
+      <span><span class="legend-dot unavailable-dot"></span> Ocupado / pasada</span>
+      <span><span class="legend-dot selected-dot"></span> Check-in / Check-out</span>
+      <span><span class="legend-dot range-dot"></span> Noches</span>
+    </div>
+
+    <div class="payment-info" id="payment-section" style="display:none;">
+      <h4>Resumen</h4>
+      <p id="nights-info"></p>
+      <p id="amount-info"></p>
+
+      <div id="user-data-form" class="user-form" style="display: none;">
+        <input type="text" id="cli-nombre" placeholder="Nombre" required>
+        <input type="text" id="cli-apellido" placeholder="Apellido" required>
+        <input type="tel" id="cli-contacto" placeholder="WhatsApp / Teléfono" required>
+      </div>
+
+      <button id="pay-btn" type="button">Completar datos para reservar</button>
+
+      <div class="after-pay-note">
+        Tus fechas se reservarán al hacer clic. Serás redirigido a MercadoPago para abonar la seña.
+      </div>
+    </div>
+  </div>
+
+<script>
+  // =========================
+  // CONFIG UNSUR
+  // =========================
+  const SHEET_ID = "1gGMZY1YZGADybxtLM5r2zWFqSEoagWkUrFaZDE5oxC4"; 
+  const WHATSAPP_NUMBER = "5493548572811"; 
+  
+  // URL DE TU APPS SCRIPT NUEVO
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyY9kU8ZHDN3PUw-2Lz5GU7S_7_VjqK5r8g569uxjNC2voViWWkMIIFCcyeN3RvR-3KyQ/exec";
+
+  const MP_LINKS = {
+    "Moreno": {
+      1:"https://mpago.la/1pVj9LG", 2:"https://mpago.la/1j9Sib4", 3:"https://mpago.la/21VbZ9D",
+      4:"https://mpago.la/2TUQHV3", 5:"https://mpago.la/2jrrAZ9", 6:"https://mpago.la/2ej75Dr",
+      7:"https://mpago.la/2PKLx1R"
+    },
+    "Mascardi": {
+      1:"https://mpago.la/2fpHFQX", 2:"https://mpago.la/1ZmWrMA", 3:"https://mpago.la/21cKdjC",
+      4:"https://mpago.la/2WUSDQb", 5:"https://mpago.la/1EAtFja", 6:"https://mpago.la/2CzWMLR",
+      7:"https://mpago.la/23va53p"
+    },
+    "Traful": {
+      1:"https://mpago.la/1LZimqA", 2:"https://mpago.la/2Jjkjxk", 3:"https://mpago.la/13ebBrE",
+      4:"https://mpago.la/12x4xKp", 5:"https://mpago.la/1As1kNd", 6:"https://mpago.la/1XwPPqr",
+      7:"https://mpago.la/2SahxXs"
+    },
+    "Nahuel Huapi": {
+      1:"https://mpago.la/1X5HrEm", 2:"https://mpago.la/1E4HkEK", 3:"https://mpago.la/2ZK2F2q",
+      4:"https://mpago.la/2depMzS", 5:"https://mpago.la/2AvRk9D", 6:"https://mpago.la/2WLGbK3",
+      7:"https://mpago.la/1Jg8peR"
+    },
+    "Gutierrez": {
+      1:"https://mpago.la/1kawSyN", 2:"https://mpago.la/28xmpQi", 3:"https://mpago.la/2cbSeB3",
+      4:"https://mpago.la/1VUa6NB", 5:"https://mpago.la/2xir5PJ", 6:"https://mpago.la/2ohzY7i",
+      7:"https://mpago.la/1Da6gzD"
+    },
+    "Espejo": {
+      1:"https://mpago.la/2TJcdWk", 2:"https://mpago.la/2NYfA3g", 3:"https://mpago.la/2LKCm5j",
+      4:"https://mpago.la/1E8h1m2", 5:"https://mpago.la/2zGtNnK", 6:"https://mpago.la/27e7nHc",
+      7:"https://mpago.la/2uKnd1U"
+    }
+  };
+
+  const PRICES_PER_NIGHT = {
+    "Moreno": 78500,
+    "Mascardi": 78500,
+    "Traful": 89250,
+    "Nahuel Huapi": 99750,
+    "Gutierrez": 99750,
+    "Espejo": 110250
+  };
+
+  const BG = {
+    "Moreno": "https://imgur.com/e6g5Qwx.jpg",
+    "Mascardi": "https://imgur.com/BOYVJKV.jpg",
+    "Traful": "https://imgur.com/2xP51Lp.jpg",
+    "Nahuel Huapi": "https://imgur.com/wFJ28zC.jpg",
+    "Gutierrez": "https://imgur.com/XLWfgjU.jpg",
+    "Espejo": "https://imgur.com/v1VykFC.jpg"
+  };
+
+  function fmtARS(n){
+    return new Intl.NumberFormat("es-AR", {
+      style:"currency",
+      currency:"ARS",
+      maximumFractionDigits:0
+    }).format(n);
+  }
+
+  function updatePriceLine(){
+    const room = document.getElementById("bungalow").value;
+    const price = PRICES_PER_NIGHT[room] || 0;
+    const el = document.getElementById("price-line");
+    if (el) el.textContent = `${room} · ${fmtARS(price)} por noche`;
+  }
+
+  let currentDate = new Date();
+  const occupiedCache = new Map();
+  let selection = { checkin: null, checkout: null, nights: 0 };
+
+  function toISO(dateObj){
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth()+1).padStart(2,"0");
+    const d = String(dateObj.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function fmtISO(iso){
+    const [y,m,d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function isoToDate(iso){
+    const [y,m,d] = iso.split("-");
+    return new Date(Number(y), Number(m)-1, Number(d));
+  }
+
+  function diffNights(checkinISO, checkoutISO){
+    const a = isoToDate(checkinISO);
+    const b = isoToDate(checkoutISO);
+    return Math.round((b - a) / (1000*60*60*24));
+  }
+
+  function enumerateNights(checkinISO, checkoutISO){
+    const start = isoToDate(checkinISO);
+    const end = isoToDate(checkoutISO);
+    const out = [];
+    const cur = new Date(start);
+    while(cur < end){
+      out.push(toISO(cur));
+      cur.setDate(cur.getDate()+1);
+    }
+    return out;
+  }
+
+  function clearCalendarHighlights(){
+    document.querySelectorAll("td.selected-day, td.checkin, td.checkout")
+      .forEach(td => td.classList.remove("selected-day","checkin","checkout"));
+  }
+
+  function highlightRange(checkinISO, checkoutISO){
+    const nights = enumerateNights(checkinISO, checkoutISO);
+    nights.forEach(iso => {
+      const td = document.querySelector(`td[data-fecha="${iso}"]`);
+      if (td) td.classList.add("selected-day");
+    });
+  }
+
+  function resetSelection(){
+    selection = { checkin: null, checkout: null, nights: 0 };
+    clearCalendarHighlights();
+    document.getElementById("payment-section").style.display = "none";
+    document.getElementById("user-data-form").style.display = "none";
+
+    const payBtn = document.getElementById("pay-btn");
+    payBtn.classList.remove("disabled");
+    payBtn.textContent = "Completar datos para reservar";
+    payBtn.onclick = null;
+  }
+
+  function updateBackground(){
+    const room = document.getElementById("bungalow").value;
+    const url = BG[room] || BG["Moreno"];
+    document.querySelector(".container").style.backgroundImage =
+      `linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.55)),url(${url})`;
+  }
+
+  function parseCSV(text){
+    const rows = [];
+    let row = [], field = "", inQuotes = false;
+
+    for (let i=0; i<text.length; i++){
+      const c = text[i];
+      const next = text[i+1];
+
+      if (inQuotes){
+        if (c === '"' && next === '"'){ field += '"'; i++; }
+        else if (c === '"'){ inQuotes = false; }
+        else { field += c; }
+      } else {
+        if (c === '"'){ inQuotes = true; }
+        else if (c === ','){ row.push(field); field=""; }
+        else if (c === '\n'){
+          row.push(field); field="";
+          rows.push(row); row=[];
+        } else if (c !== '\r'){
+          field += c;
+        }
+      }
+    }
+    if (field.length || row.length){
+      row.push(field);
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function parseDDMMYY_flexible(str){
+    const t = String(str || "").trim();
+    const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+    if (!m) return null;
+
+    let dd = Number(m[1]);
+    let mm = Number(m[2]);
+    let yy = String(m[3]);
+    if (yy.length === 2) yy = "20" + yy;
+
+    const d = new Date(Number(yy), mm-1, dd);
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  async function loadOccupiedForRoom(room){
+    if (occupiedCache.has(room)) return occupiedCache.get(room);
+
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(room)}`;
+
+    try{
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error("No se pudo leer el Sheet");
+      const text = await r.text();
+
+      const rows = parseCSV(text);
+      const occupied = new Set();
+
+      for (const rr of rows){
+        const d = parseDDMMYY_flexible(rr[0]);
+        if (!d) continue;
+
+        const iso = toISO(d);
+        const val = String(rr[1] || "").trim();
+
+        if (val !== "") occupied.add(iso);
+      }
+
+      occupiedCache.set(room, occupied);
+      return occupied;
+    }catch(e){
+      console.error("Error al obtener disponibilidad:", e);
+      throw e; 
+    }
+  }
+
+  async function loadAvailabilityData(){
+    const room = document.getElementById("bungalow").value;
+    const monthYear = document.getElementById("month-year");
+    const body = document.getElementById("calendar-body");
+    const loadingOverlay = document.getElementById("loading-overlay");
+
+    if (loadingOverlay) loadingOverlay.style.display = "flex";
+    body.innerHTML = ""; 
+
+    let occupied;
+    try {
+      occupied = await loadOccupiedForRoom(room);
+    } catch (error) {
+      if (loadingOverlay) loadingOverlay.style.display = "none";
+      monthYear.textContent = "Sistema temporalmente inactivo";
+      
+      const waMsg = `Hola! Estaba intentando ver la disponibilidad del bungalow *${room}* pero hubo un error en la página. ¿Me podrán confirmar qué fechas tienen libres?`;
+      
+      body.innerHTML = `
+        <tr>
+          <td colspan="7" class="error-message">
+            No pudimos sincronizar el calendario en este momento para evitar superposición de reservas.<br>
+            <a href="https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(waMsg)}" target="_blank" class="wa-fallback">
+              Consultar fechas por WhatsApp
+            </a>
+          </td>
+        </tr>
+      `;
+      resetSelection();
+      return; 
+    }
+
+    if (loadingOverlay) loadingOverlay.style.display = "none";
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const today = new Date();
+    const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    monthYear.textContent = currentDate.toLocaleString("es-ES", { month: "long", year: "numeric" });
+
+    let row = document.createElement("tr");
+    for (let i=0; i<firstDay; i++) row.appendChild(document.createElement("td"));
+
+    for (let day=1; day<=daysInMonth; day++){
+      const date = new Date(year, month, day);
+      const td = document.createElement("td");
+      td.innerHTML = `<div class="day">${day}</div>`;
+
+      const iso = toISO(date);
+      td.dataset.fecha = iso;
+
+      const isPast = date < today0;
+      const isOccupied = occupied.has(iso);
+
+      if (isPast || isOccupied){
+        td.className = "unavailable";
+      } else {
+        td.className = "available";
+        td.onclick = () => onDayClick(iso);
+      }
+
+      row.appendChild(td);
+
+      if (date.getDay() === 6){
+        body.appendChild(row);
+        row = document.createElement("tr");
+      }
+    }
+    if (row.children.length > 0) body.appendChild(row);
+
+    resetSelection();
+    updatePriceLine();
+  }
+
+  function changeMonth(offset){
+    currentDate.setMonth(currentDate.getMonth() + offset);
+    loadAvailabilityData();
+  }
+
+  async function onDayClick(isoDate){
+    const room = document.getElementById("bungalow").value;
+    const occupied = await loadOccupiedForRoom(room);
+
+    if (!selection.checkin || (selection.checkin && selection.checkout)){
+      selection.checkin = isoDate;
+      selection.checkout = null;
+      selection.nights = 0;
+
+      clearCalendarHighlights();
+      const td = document.querySelector(`td[data-fecha="${isoDate}"]`);
+      if (td) td.classList.add("checkin");
+      updateSummary();
+      return;
+    }
+
+    if (isoDate <= selection.checkin){
+      selection.checkin = isoDate;
+      selection.checkout = null;
+      selection.nights = 0;
+
+      clearCalendarHighlights();
+      const td = document.querySelector(`td[data-fecha="${isoDate}"]`);
+      if (td) td.classList.add("checkin");
+      updateSummary();
+      return;
+    }
+
+    const nightsList = enumerateNights(selection.checkin, isoDate);
+    const bad = nightsList.find(n => occupied.has(n));
+    if (bad){
+      alert("Hay una noche ocupada dentro del rango seleccionado. Probá con otras fechas.");
+      return;
+    }
+
+    selection.checkout = isoDate;
+    selection.nights = diffNights(selection.checkin, selection.checkout);
+
+    clearCalendarHighlights();
+    highlightRange(selection.checkin, selection.checkout);
+
+    const tdIn = document.querySelector(`td[data-fecha="${selection.checkin}"]`);
+    if (tdIn) tdIn.classList.add("checkin");
+
+    const tdOut = document.querySelector(`td[data-fecha="${selection.checkout}"]`);
+    if (tdOut) tdOut.classList.add("checkout");
+
+    updateSummary();
+  }
+
+  function updateSummary(){
+    const { checkin, checkout, nights } = selection;
+    const room = document.getElementById("bungalow").value;
+    const price = PRICES_PER_NIGHT[room] || 0;
+    
+    const payBtn = document.getElementById("pay-btn");
+    const userForm = document.getElementById("user-data-form");
+
+    if (!checkin){
+      document.getElementById("payment-section").style.display = "none";
+      return;
+    }
+
+    if (!checkout){
+      document.getElementById("nights-info").textContent = `Bungalow: ${room} · Check-in: ${fmtISO(checkin)} · Check-out: —`;
+      document.getElementById("amount-info").textContent = `Precio por noche: ${fmtARS(price)}`;
+      document.getElementById("payment-section").style.display = "block";
+      
+      userForm.style.display = "none";
+      payBtn.classList.add("disabled");
+      payBtn.textContent = "Elegí la salida en el calendario";
+      payBtn.onclick = null;
+      return;
+    }
+
+    const total = nights * price;
+
+    document.getElementById("nights-info").textContent = `Bungalow: ${room} · Check-in: ${fmtISO(checkin)} · Check-out: ${fmtISO(checkout)}`;
+    document.getElementById("amount-info").textContent = `Precio por noche: ${fmtARS(price)} · Total (${nights} noches): ${fmtARS(total)}`;
+
+    document.getElementById("payment-section").style.display = "block";
+    payBtn.classList.remove("disabled");
+
+    if (nights >= 1 && nights <= 7){
+      const link = MP_LINKS[room] && MP_LINKS[room][nights];
+      if (!link){
+        userForm.style.display = "none";
+        payBtn.classList.add("disabled");
+        payBtn.textContent = "Link no configurado";
+        payBtn.onclick = null;
+      } else {
+        userForm.style.display = "flex";
+        payBtn.textContent = "Bloquear fechas y Pagar";
+        payBtn.onclick = () => bookDatesAndRedirect(link);
+      }
+    } else if (nights > 7){
+      userForm.style.display = "none";
+      const msg = `Hola! Quiero reservar en Bungalows UNSUR.%0A%0ABungalow: *${encodeURIComponent(room)}*%0ACheck-in: ${encodeURIComponent(fmtISO(checkin))}%0ACheck-out: ${encodeURIComponent(fmtISO(checkout))}%0ANoches: ${encodeURIComponent(String(nights))}%0A%0AReservo más de 7 noches. ¿Podemos coordinar?`;
+      payBtn.textContent = "Solicitar por WhatsApp";
+      payBtn.onclick = () => window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+    } else {
+      userForm.style.display = "none";
+      payBtn.classList.add("disabled");
+      payBtn.textContent = "Elegí una salida válida";
+      payBtn.onclick = null;
+    }
+  }
+
+  // === REDIRECCIÓN Y GUARDADO EN GOOGLE SHEETS ===
+// === REDIRECCIÓN Y GUARDADO EN GOOGLE SHEETS (Actualizado para Vercel) ===
+  async function bookDatesAndRedirect(mpLink) {
+    const nombre = document.getElementById("cli-nombre").value.trim();
+    const apellido = document.getElementById("cli-apellido").value.trim();
+    const contacto = document.getElementById("cli-contacto").value.trim();
+
+    if (!nombre || !apellido || !contacto) {
+      alert("Por favor completá tu nombre, apellido y teléfono para reservar.");
+      return;
+    }
+
+    const btn = document.getElementById("pay-btn");
+    btn.textContent = "Registrando reserva...";
+    btn.classList.add("disabled");
+
+    const payload = {
+      bungalow: document.getElementById("bungalow").value,
+      checkin: selection.checkin,
+      checkout: selection.checkout,
+      nombre: nombre,
+      apellido: apellido,
+      contacto: contacto
+    };
+
+    try {
+      // Usamos mode: "no-cors" para que Vercel y Google Sheets se lleven bien
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        mode: "no-cors" 
+      });
+
+      // Como usamos no-cors, asumimos que se envió y redirigimos a MercadoPago
+      window.open(mpLink, "_blank");
+      
+      // Limpiamos formulario
+      document.getElementById("cli-nombre").value = "";
+      document.getElementById("cli-apellido").value = "";
+      document.getElementById("cli-contacto").value = "";
+      
+      // Recargamos calendario
+      occupiedCache.delete(payload.bungalow);
+      await loadAvailabilityData(); 
+
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un problema de conexión. Intentá de nuevo o contactanos por WhatsApp.");
+      btn.textContent = "Reintentar reserva";
+      btn.classList.remove("disabled");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    document.getElementById("bungalow").addEventListener("change", async () => {
+      updateBackground();
+      updatePriceLine();
+      await loadAvailabilityData();
+    });
+
+    updateBackground();
+    updatePriceLine();
+    await loadAvailabilityData();
+  });
+</script>
+</body>
+</html>
