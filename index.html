@@ -261,15 +261,36 @@
     } else { form.style.display = "none"; btn.textContent = "Elegí la salida"; }
   }
 
-  async function bookAndPay(link){
-    const n = document.getElementById("cli-nombre").value, a = document.getElementById("cli-apellido").value, c = document.getElementById("cli-contacto").value;
+async function bookAndPay(link) {
+    const n = document.getElementById("cli-nombre").value;
+    const a = document.getElementById("cli-apellido").value;
+    const c = document.getElementById("cli-contacto").value;
+    
     if(!n || !a || !c) return alert("Completá tus datos");
-    const btn = document.getElementById("pay-btn"); btn.textContent = "Registrando..."; btn.classList.add("disabled");
-    const params = new URLSearchParams({bungalow: document.getElementById("bungalow").value, checkin: selection.checkin, checkout: selection.checkout, nombre: n, apellido: a, contacto: c});
-    try {
-      await fetch(APPS_SCRIPT_URL + "?" + params.toString(), {mode: "no-cors"});
+    
+    const btn = document.getElementById("pay-btn");
+    btn.textContent = "Registrando...";
+    btn.classList.add("disabled");
+
+    // Construimos la URL de llamada
+    const params = new URLSearchParams({
+      bungalow: document.getElementById("bungalow").value,
+      checkin: selection.checkin,
+      checkout: selection.checkout,
+      nombre: n,
+      apellido: a,
+      contacto: c
+    });
+
+    const finalUrl = APPS_SCRIPT_URL + "?" + params.toString();
+
+    // EJECUCIÓN DOBLE: Llamamos al script y redirigimos
+    // Usamos un pequeño delay para dar tiempo a que Google reciba el dato
+    fetch(finalUrl, { mode: "no-cors" });
+    
+    setTimeout(() => {
       window.location.href = link;
-    } catch (e) { alert("Error de conexión"); btn.classList.remove("disabled"); btn.textContent = "Reintentar"; }
+    }, 800);
   }
 
   function resetSelection(){ selection = {checkin:null, checkout:null, nights:0}; updateSummary(); renderSelection(); }
