@@ -907,7 +907,7 @@
   }
 
   // === REDIRECCIÓN Y GUARDADO EN GOOGLE SHEETS ===
-// === REDIRECCIÓN Y GUARDADO EN GOOGLE SHEETS (Actualizado para Vercel) ===
+// === MAGIA PURA: Redirección directa sin pop-ups ===
   async function bookDatesAndRedirect(mpLink) {
     const nombre = document.getElementById("cli-nombre").value.trim();
     const apellido = document.getElementById("cli-apellido").value.trim();
@@ -919,39 +919,28 @@
     }
 
     const btn = document.getElementById("pay-btn");
-    btn.textContent = "Registrando reserva...";
+    btn.textContent = "Derivando a MercadoPago...";
     btn.classList.add("disabled");
 
-    const payload = {
+    // Preparamos los datos para enviarlos por la URL (método GET)
+    const urlParams = new URLSearchParams({
       bungalow: document.getElementById("bungalow").value,
       checkin: selection.checkin,
       checkout: selection.checkout,
       nombre: nombre,
       apellido: apellido,
       contacto: contacto
-    };
+    });
+
+    const finalUrl = APPS_SCRIPT_URL + "?" + urlParams.toString();
 
     try {
-      // Usamos mode: "no-cors" para que Vercel y Google Sheets se lleven bien
-      await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        mode: "no-cors" 
-      });
-
-      // Como usamos no-cors, asumimos que se envió y redirigimos a MercadoPago
-      window.open(mpLink, "_blank");
+      // 1. Avisamos a Google Sheets (sin que el navegador bloquee por CORS)
+      await fetch(finalUrl, { mode: "no-cors" });
       
-      // Limpiamos formulario
-      document.getElementById("cli-nombre").value = "";
-      document.getElementById("cli-apellido").value = "";
-      document.getElementById("cli-contacto").value = "";
+      // 2. REDIRECCIÓN EN LA MISMA PESTAÑA (Chau bloqueadores)
+      window.location.href = mpLink;
       
-      // Recargamos calendario
-      occupiedCache.delete(payload.bungalow);
-      await loadAvailabilityData(); 
-
     } catch (err) {
       console.error(err);
       alert("Hubo un problema de conexión. Intentá de nuevo o contactanos por WhatsApp.");
